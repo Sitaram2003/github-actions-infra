@@ -19,11 +19,8 @@ df = (
     .load()
 )
 
-orders = df.selectExpr("CAST(value as STRING)").withColumn(
-        'ingestion_ts', current_timestamp()).withColumn('ingestion_date',to_date('ingestion_ts'))
-
 query = (
-    orders
+    df
     .writeStream
     .format('parquet')
     .option("checkpointLocation", checkpoint_path)

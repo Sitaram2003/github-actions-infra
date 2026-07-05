@@ -13,7 +13,7 @@ env:
   AWS_REGION: ap-south-2                      # <-- update to your region
   ECR_REPOSITORY: de-spark-prod          # <-- your ECR repo name
   YAML_DIR: spark-templates                   # folder with yaml files to update
-  IMAGE_YAML_KEY: '.spec.template.spec.image'  # yq path to image field, adjust per file structure
+  IMAGE_YAML_KEY: '.spec.image'  # yq path to image field, adjust per file structure
 
 jobs:
   build-and-push:
@@ -26,7 +26,7 @@ jobs:
 
       - name: Set short SHA as image tag
         id: vars
-        run: echo "IMAGE_TAG=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+        run: echo "IMAGE_TAG=${GITHUB_SHA::6}" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials (access key)
         uses: aws-actions/configure-aws-credentials@v4
