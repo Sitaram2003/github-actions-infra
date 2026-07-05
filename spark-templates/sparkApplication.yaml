@@ -6,7 +6,7 @@ metadata:
 spec:
   type: Python
   mode: cluster
-  image: "940507692220.dkr.ecr.ap-south-2.amazonaws.com/spark-custom-image:latest"   # <-- updated by GitHub Actions with git-sha tag
+  image: "940507692220.dkr.ecr.ap-south-2.amazonaws.com/de-spark-prod:0e967aaab585"   # <-- updated by GitHub Actions with git-sha tag
   imagePullPolicy: Always
   mainApplicationFile: local:///opt/spark/scripts/test_job.py
   sparkVersion: "3.5.0"
