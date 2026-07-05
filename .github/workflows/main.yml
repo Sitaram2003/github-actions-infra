@@ -11,9 +11,8 @@ permissions:
 
 env:
   AWS_REGION: ap-south-2                      # <-- update to your region
-  ECR_REPOSITORY: de-spark-prod          # <-- your ECR repo name
+  ECR_REPOSITORY: de-spark-prod               # <-- your ECR repo name
   YAML_DIR: spark-templates                   # folder with yaml files to update
-  IMAGE_YAML_KEY: '.spec.image'  # yq path to image field, adjust per file structure
 
 jobs:
   build-and-push:
@@ -26,7 +25,7 @@ jobs:
 
       - name: Set short SHA as image tag
         id: vars
-        run: echo "IMAGE_TAG=${GITHUB_SHA::6}" >> "$GITHUB_OUTPUT"
+        run: echo "IMAGE_TAG=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS credentials (access key)
         uses: aws-actions/configure-aws-credentials@v4
@@ -49,18 +48,26 @@ jobs:
           docker push "$IMAGE_URI"
           echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
 
-      - name: Install yq
-        run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          sudo chmod +x /usr/local/bin/yq
-
       - name: Update image tag in spark_templates yaml
         run: |
-          for f in ${YAML_DIR}/*.yaml ${YAML_DIR}/*.yml; do
-            [ -e "$f" ] || continue
-            yq eval "${IMAGE_YAML_KEY} = \"${IMAGE_URI}\"" -i "$f"
-            echo "Updated $f -> ${IMAGE_URI}"
+          shopt -s nullglob
+          files=(${YAML_DIR}/*.yaml ${YAML_DIR}/*.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "ERROR: no yaml files found in ${YAML_DIR}/"
+            exit 1
+          fi
+          for f in "${files[@]}"; do
+            echo "--- BEFORE: $f ---"
+            grep 'image:' "$f" || true
+            sed -i -E "s|(image:[[:space:]]*\")[^\"]+(\")|\1${IMAGE_URI}\2|" "$f"
+            echo "--- AFTER: $f ---"
+            grep 'image:' "$f" || true
           done
+
+      - name: Debug - show git status before commit
+        run: |
+          git status
+          git diff --stat
 
       - name: Commit and push updated yaml
         run: |

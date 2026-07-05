@@ -59,7 +59,7 @@ RUN curl -fLO https://repo1.maven.org/maven2/net/snowflake/spark-snowflake_2.12/
 # ==============================
 # Permissions
 # ==============================
-COPY scripts/* /opt/spark/scripts
+COPY scripts/* /opt/spark/
 
 RUN chmod 644 *.jar && chown spark:spark *.jar
 
