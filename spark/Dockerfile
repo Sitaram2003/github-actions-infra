@@ -24,11 +24,11 @@ RUN curl -fLO https://repo1.maven.org/maven2/org/apache/commons/commons-pool2/2.
 RUN curl -fLO https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar \
  && curl -fLO https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.540/aws-java-sdk-bundle-1.12.540.jar
 
-# ==============================
-# Delta Lake (Spark 3.5)
-# ==============================
-RUN curl -fLO https://repo1.maven.org/maven2/io/delta/delta-spark_2.12/3.1.0/delta-spark_2.12-3.1.0.jar \
- && curl -fLO https://repo1.maven.org/maven2/io/delta/delta-storage/3.1.0/delta-storage-3.1.0.jar
+# # ==============================
+# # Delta Lake (Spark 3.5)
+# # ==============================
+# RUN curl -fLO https://repo1.maven.org/maven2/io/delta/delta-spark_2.12/3.1.0/delta-spark_2.12-3.1.0.jar \
+#  && curl -fLO https://repo1.maven.org/maven2/io/delta/delta-storage/3.1.0/delta-storage-3.1.0.jar
 
 # ==============================
 # JDBC Drivers
