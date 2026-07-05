@@ -7,7 +7,7 @@ output_path = sys.argv[2]
 checkpoint_path = sys.argv[3]
 
 
-spark = SparkSession.builder.appName("Orders-Bronze-Ingestion").getOrCreate()
+spark = SparkSession.builder.appName("Orders-Ingestion").getOrCreate()
 
 df = ( 
     spark
