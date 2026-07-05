@@ -1,0 +1,75 @@
+name: Build & Push Spark Image to ECR
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'spark/**'
+
+permissions:
+  contents: write   # required to commit updated yaml back
+
+env:
+  AWS_REGION: ap-south-2                      # <-- update to your region
+  ECR_REPOSITORY: de-spark-prod          # <-- your ECR repo name
+  YAML_DIR: spark-templates                   # folder with yaml files to update
+  IMAGE_YAML_KEY: '.spec.template.spec.image'  # yq path to image field, adjust per file structure
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set short SHA as image tag
+        id: vars
+        run: echo "IMAGE_TAG=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials (access key)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ steps.vars.outputs.IMAGE_TAG }}
+        run: |
+          IMAGE_URI="$REGISTRY/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          docker build -t "$IMAGE_URI" -f spark/Dockerfile spark/
+          docker push "$IMAGE_URI"
+          echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Update image tag in spark_templates yaml
+        run: |
+          for f in ${YAML_DIR}/*.yaml ${YAML_DIR}/*.yml; do
+            [ -e "$f" ] || continue
+            yq eval "${IMAGE_YAML_KEY} = \"${IMAGE_URI}\"" -i "$f"
+            echo "Updated $f -> ${IMAGE_URI}"
+          done
+
+      - name: Commit and push updated yaml
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ${YAML_DIR}/*.yaml ${YAML_DIR}/*.yml 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "ci: update spark image to ${{ steps.vars.outputs.IMAGE_TAG }} [skip ci]"
+            git push
+          else
+            echo "No yaml changes to commit"
+          fi
